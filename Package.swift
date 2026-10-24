@@ -5,6 +5,10 @@ import PackageDescription
 
 let package = Package(
     name: "MushafSonbla",
+    defaultLocalization: "ar",
+    platforms: [
+        .iOS(.v17)
+    ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
@@ -12,11 +16,23 @@ let package = Package(
             targets: ["MushafSonbla"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://github.com/groue/GRDB.swift.git", branch: "master")
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "MushafSonbla",
+            dependencies: [
+                .product(name: "GRDB", package: "GRDB.swift")
+            ],
+            resources: [
+                .copy("Resources/quranImages"),
+                .process("Resources/Assets.xcassets"),
+                .process("Resources/Fonts"),
+                .process("Resources/quran.sqlite")
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
             ],
