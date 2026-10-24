@@ -7,9 +7,8 @@
 
 import SwiftUI
 
-@MainActor
 public struct PageContainer: View {
-    @Bindable public var viewModel: QuranViewModel
+    @Bindable var viewModel: QuranViewModel
     
     public let pageNumber: Int
     public let targetAyaNo: Int?
@@ -76,23 +75,36 @@ public struct PageContainer: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task(id: pageNumber) {
+        .task {
             await loadPage()
         }
     }
     
     private func loadPage() async {
         if let cached = Self.pageCache[pageNumber] {
-            self.pageData = cached
-            if let cachedHizb = Self.hizbCache[pageNumber] {
-                self.hizbInfo = cachedHizb
-            }
-            if let targetAya = targetAyaNo {
-                self.searchTargetVerse = cached.verses1441.first { ayah in
-                    if let targetSura = targetSuraNo {
-                        return ayah.ayaNo == targetAya && ayah.suraNo == targetSura
+            await MainActor.run {
+                self.pageData = cached
+                if let cachedHizb = Self.hizbCache[pageNumber] {
+                    self.hizbInfo = cachedHizb
+                }
+                
+                if self.viewModel.loadedPages[self.pageNumber] == nil, let first = cached.verses1441.first {
+                    self.viewModel.loadedPages[self.pageNumber] = CachedPage(
+                        ayahs: cached.verses1441,
+                        suraNameAr: first.suraNameAr,
+                        partId: first.partId,
+                        suraNo: first.suraNo,
+                        suraFirstPage: first.ayaNo == 1
+                    )
+                }
+                
+                if let targetAya = targetAyaNo {
+                    self.searchTargetVerse = cached.verses1441.first { ayah in
+                        if let targetSura = targetSuraNo {
+                            return ayah.ayaNo == targetAya && ayah.suraNo == targetSura
+                        }
+                        return ayah.ayaNo == targetAya
                     }
-                    return ayah.ayaNo == targetAya
                 }
             }
             return
@@ -104,30 +116,36 @@ public struct PageContainer: View {
             async let fetchHizb = QuranDB.shared.getHizbInfoForPage(pageId: pageNumber)
             
             let (verses, headers, hizb) = try await (fetchVerses, fetchHeaders, fetchHizb)
-            let newPage = Page(
-                identifier: pageNumber,
-                number: pageNumber,
-                isRight: pageNumber % 2 != 0,
-                verses: verses,
-                headers: headers
-            )
+            let newPage = Page(identifier: pageNumber, number: pageNumber, isRight: pageNumber % 2 != 0, verses: verses, headers: headers)
             
-            self.pageData = newPage
-            self.hizbInfo = hizb
-            Self.pageCache[pageNumber] = newPage
-            Self.hizbCache[pageNumber] = hizb
-            
-            if let targetAya = self.targetAyaNo {
-                self.searchTargetVerse = verses.first(where: { ayah in
-                    if let targetSura = self.targetSuraNo {
-                        return ayah.ayaNo == targetAya && ayah.suraNo == targetSura
-                    }
-                    return ayah.ayaNo == targetAya
-                })
+            await MainActor.run {
+                self.pageData = newPage
+                self.hizbInfo = hizb
+                Self.pageCache[pageNumber] = newPage
+                Self.hizbCache[pageNumber] = hizb
+                
+                if let first = verses.first {
+                    self.viewModel.loadedPages[self.pageNumber] = CachedPage(
+                        ayahs: verses,
+                        suraNameAr: first.suraNameAr,
+                        partId: first.partId,
+                        suraNo: first.suraNo,
+                        suraFirstPage: first.ayaNo == 1
+                    )
+                }
+                
+                if let targetAya = self.targetAyaNo {
+                    self.searchTargetVerse = verses.first(where: { ayah in
+                        if let targetSura = self.targetSuraNo {
+                            return ayah.ayaNo == targetAya && ayah.suraNo == targetSura
+                        }
+                        return ayah.ayaNo == targetAya
+                    })
+                }
             }
         } catch {
             #if DEBUG
-            print("Error loading page \(pageNumber): \(error)")
+            print("Error loading page: \(error)")
             #endif
         }
     }

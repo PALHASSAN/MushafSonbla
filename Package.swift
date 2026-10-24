@@ -31,7 +31,8 @@ let package = Package(
                 .copy("Resources/quranImages"),
                 .process("Resources/Assets.xcassets"),
                 .process("Resources/Fonts"),
-                .process("Resources/quran.sqlite")
+                .process("Resources/quran.sqlite"),
+                .process("AudioPlayer/Resources")
             ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),

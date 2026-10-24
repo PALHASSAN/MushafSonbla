@@ -5,7 +5,6 @@
 //  Created by Alhassan AlMakki on 13/05/1448 AH.
 //
 
-
 import SwiftUI
 import Observation
 import CoreGraphics
@@ -34,7 +33,6 @@ final class PageWrapper: @unchecked Sendable {
     let page: CachedPage
     init(_ page: CachedPage) { self.page = page }
 }
-
 
 #if canImport(UIKit)
 @MainActor
@@ -130,9 +128,12 @@ public final class QuranViewModel {
     private var memoryWarningTask: Task<Void, Never>?
     #endif
     
-    public var selectedVerseId: Int = UserDefaults.standard.integer(forKey: "selected_verse_id") == 0 ? -1 : UserDefaults.standard.integer(forKey: "selected_verse_id") {
+    public var selectedVerseId: Int =
+    UserDefaults.standard.integer(forKey: "mushaf_selected_verse_id") == 0
+            ? -1
+            : UserDefaults.standard.integer(forKey: "mushaf_selected_verse_id") {
         didSet {
-            UserDefaults.standard.set(selectedVerseId, forKey: "selected_verse_id")
+            UserDefaults.standard.set(selectedVerseId, forKey: "mushaf_selected_verse_id")
         }
     }
     
@@ -141,10 +142,10 @@ public final class QuranViewModel {
     public var showTafsir: Bool = false
     
     private struct Keys {
-        static let lastSuraNo = "LastSuraNo"
-        static let lastSuraName = "LastSuraName"
-        static let lastPageID = "LastPageID"
-        static let lastPartID = "LastPartID"
+        static let lastSuraNo = "mushaf_last_sura_no"
+        static let lastSuraName = "mushaf_last_sura_name"
+        static let lastPageID = "mushaf_last_page_id"
+        static let lastPartID = "mushaf_last_part_id"
     }
     
     public init() {
